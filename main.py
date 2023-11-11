@@ -1,9 +1,9 @@
 from enum import Enum
 from fastapi import FastAPI
 from pydantic import BaseModel
+from datetime import datetime
 
 app = FastAPI()
-
 
 
 class DogType(str, Enum):
@@ -24,47 +24,57 @@ class Timestamp(BaseModel):
 
 
 dogs_db = {
-    0: Dog(name='Bob', pk=0, kind='terrier'),
-    1: Dog(name='Marli', pk=1, kind="bulldog"),
-    2: Dog(name='Snoopy', pk=2, kind='dalmatian'),
-    3: Dog(name='Rex', pk=3, kind='dalmatian'),
-    4: Dog(name='Pongo', pk=4, kind='dalmatian'),
-    5: Dog(name='Tillman', pk=5, kind='bulldog'),
-    6: Dog(name='Uga', pk=6, kind='bulldog')
+    0: Dog(name="Bob", pk=0, kind="terrier"),
+    1: Dog(name="Marli", pk=1, kind="bulldog"),
+    2: Dog(name="Snoopy", pk=2, kind="dalmatian"),
+    3: Dog(name="Rex", pk=3, kind="dalmatian"),
+    4: Dog(name="Pongo", pk=4, kind="dalmatian"),
+    5: Dog(name="Tillman", pk=5, kind="bulldog"),
+    6: Dog(name="Uga", pk=6, kind="bulldog"),
 }
 
-post_db = [
-    Timestamp(id=0, timestamp=12),
-    Timestamp(id=1, timestamp=10)
-]
+post_db = [Timestamp(id=0, timestamp=12), Timestamp(id=1, timestamp=10)]
+
 
 @app.get("/")
-
 async def root():
     return {"message": "start"}
 
-@app.post("/post")
-async def post() -> dict:
-    return post_db.dict()
 
-#@app.get("/dog",  response_model=list[Dog], summary='Get Dogs')
-@app.get("/dog")
-async def dog() -> list:
-    return DogType._member_names_
+@app.post("/post", summary="Get Post")
+async def post() -> Timestamp:
+    new_timestamp = datetime.now()
+    post_timestamp = int(round(new_timestamp.timestamp()))
+    last_id = len(post_db)
+    post_db.append(Timestamp(id=last_id, timestamp=post_timestamp))
+    return post_db[-1]
 
-@app.post("/dog")
-async def dog(item: Dog):
-    return item.dict()
+@app.get("/dog", response_model=list[Dog], summary="Get Dogs")
+async def dog(kind: DogType = None) -> list[Dog]:
+    if kind is None:
+        dog_list = dogs_db.values()
+    else:
+        dog_list = [
+            dog_in_db for dog_in_db in dogs_db.values() if dog_in_db.kind == kind
+        ]
+    return dog_list
 
-@app.get("/dog/{pk}")
-async def pk(pk: int) -> dict:
-    return dogs_db[pk].dict()
 
-@app.patch("/dog/{pk}")
-async def dog_pk(pk: int, item: Dog):
-    Dog_in_db = dogs_db[pk]
-    Dog_update = Dog(**Dog_in_db)
-    update_data = item.dict(exclude_unset=True)
-    updated_item = Dog_update.copy(update=update_data)
-    return updated_item
+@app.post("/dog", response_model=Dog, summary="Create Dog")
+async def get_dogs(item: Dog) -> Dog:
+    last_value = list(dogs_db)[-1] + 1
+    dogs_db[last_value] = item
+    return dogs_db[last_value]
+
+
+@app.get("/dog/{pk}", response_model=Dog, summary="Get Dog By Pk")
+async def pk(pk: int) -> Dog:
+    return dogs_db[pk]
+
+@app.patch("/dog/{pk}", response_model=Dog, summary="Update Dog")
+async def dog_pk(pk: int, item: Dog) -> Dog:
+    dog_in_db = dogs_db[pk]
+    dog_in_db.name = item.name
+    dog_in_db.kind = item.kind
+    return dog_in_db
 
