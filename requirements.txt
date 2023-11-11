@@ -34,5 +34,5 @@ ujson==5.7.0
 uvicorn==0.22.0
 uvloop==0.18.0
 tomli==2.0.1
-watchfiles==0.21.0
+watchfiles==0.20.0
 websockets==11.0.3
