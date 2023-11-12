@@ -2,6 +2,7 @@ from enum import Enum
 from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List
 
 app = FastAPI()
 
@@ -49,8 +50,8 @@ async def post() -> Timestamp:
     post_db.append(Timestamp(id=last_id, timestamp=post_timestamp))
     return post_db[-1]
 
-@app.get("/dog", response_model=list[Dog], summary="Get Dogs")
-async def dog(kind: DogType = None) -> list[Dog]:
+@app.get("/dog", response_model=List[Dog], summary="Get Dogs")
+async def dog(kind: DogType = None) -> List[Dog]:
     if kind is None:
         dog_list = dogs_db.values()
     else:
@@ -62,7 +63,7 @@ async def dog(kind: DogType = None) -> list[Dog]:
 
 @app.post("/dog", response_model=Dog, summary="Create Dog")
 async def get_dogs(item: Dog) -> Dog:
-    last_value = list(dogs_db)[-1] + 1
+    last_value = List(dogs_db)[-1] + 1
     dogs_db[last_value] = item
     return dogs_db[last_value]
 
